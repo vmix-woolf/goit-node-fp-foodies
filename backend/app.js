@@ -7,6 +7,7 @@ import db from "./models/index.js";
 import categoriesRouter from "./routes/categoriesRouter.js";
 import authRouter from "./routes/authRouter.js";
 import ingredientRouter from "./routes/ingredientsRouter.js";
+import testimonialsRouter from "./routes/testimonialsRouter.js";
 import areasRouter from "./routes/areasRouter.js";
 import recipesRouter from "./routes/recipesRouter.js";
 // import contactsRouter from "./routes/contactsRouter.js";
@@ -23,6 +24,7 @@ app.use(express.static("public"));
 
 app.use("/api/categories", categoriesRouter);
 app.use("/api/ingredients", ingredientRouter);
+app.use("/api/testimonials", testimonialsRouter);
 app.use("/api/areas", areasRouter);
 app.use("/api/recipes", recipesRouter);
 app.use("/api/auth", authRouter);
