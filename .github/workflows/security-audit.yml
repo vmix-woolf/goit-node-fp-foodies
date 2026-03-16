@@ -1,18 +1,17 @@
 name: Security Audit (npm -> SARIF)
 
 on:
-  workflow_run:
-    workflows: ["Verify Frontend Build And Backend Syntax"]
-    types:
-      - completed
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   audit:
-    # Run only when the upstream verify workflow completed successfully for pull requests.
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -27,6 +26,8 @@ jobs:
     steps:
       # Checkout repository code
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       # Setup Node.js runtime for project commands
       - name: Setup Node.js
