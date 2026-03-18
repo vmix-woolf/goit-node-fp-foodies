@@ -21,7 +21,6 @@
   position: relative;
 }
 
-/* Add right padding to make room for the eye toggle button */
 .passwordInput {
   padding-right: 48px;
 }
