@@ -1,7 +1,9 @@
 import { useFormik } from "formik";
-import { type ReactElement } from "react";
+import { type ReactElement, useEffect } from "react";
 import { Button, FormErrorMessage, ImageInput, Input, Select, TextArea } from "../../../shared/ui";
+import { Icon } from "../../../shared/components/Icon";
 import { DEFAULT_RECIPE_FORM_VALUES, recipeEditorSchema, type RecipeEditorFormValues } from "../validation";
+import { notificationService } from "../../../shared/services/notifications";
 import styles from "./RecipeEditorForm.module.css";
 
 type ReferenceOption = {
@@ -50,6 +52,11 @@ export const RecipeEditorForm = ({
   onSubmit,
   onCancel,
 }: RecipeEditorFormProps): ReactElement => {
+  // Show submit errors as toast notification (right-bottom corner)
+  useEffect(() => {
+    if (submitError) notificationService.error(submitError);
+  }, [submitError]);
+
   const formik = useFormik<RecipeEditorFormValues>({
     initialValues: initialValues ?? DEFAULT_RECIPE_FORM_VALUES,
     validationSchema: recipeEditorSchema,
@@ -114,14 +121,14 @@ export const RecipeEditorForm = ({
     const nextIngredients = [
       ...formik.values.ingredients,
       {
-        ingredientId: formik.values.pendingIngredient.ingredientId,
+        // Parse to Number — Select returns string, Yup schema expects number
+        ingredientId: Number(formik.values.pendingIngredient.ingredientId),
         measure: formik.values.pendingIngredient.measure.trim(),
       },
     ];
 
-    formik.setFieldValue("ingredients", nextIngredients, true);
-    void formik.setFieldTouched("ingredients", true);
-    formik.setFieldError("ingredients", undefined);
+    void formik.setFieldValue("ingredients", nextIngredients, false);
+    // Don't touch ingredients on successful add — errors show on submit attempt
 
     formik.setFieldValue("pendingIngredient", EMPTY_PENDING_INGREDIENT, false);
     void formik.setFieldTouched("pendingIngredient.ingredientId", false, false);
@@ -132,8 +139,8 @@ export const RecipeEditorForm = ({
 
   const handleRemoveIngredient = (indexToRemove: number) => {
     const nextIngredients = formik.values.ingredients.filter((_, index) => index !== indexToRemove);
-    formik.setFieldValue("ingredients", nextIngredients, true);
-    void formik.setFieldTouched("ingredients", true);
+    void formik.setFieldValue("ingredients", nextIngredients, false);
+    // Don't touch on remove either — error shows only on submit if array is empty
   };
 
   const ingredientOptionMap = ingredientsOptions.reduce<Record<string, string>>((accumulator, optionItem) => {
@@ -168,18 +175,17 @@ export const RecipeEditorForm = ({
 
   return (
     <form className={styles.form} onSubmit={formik.handleSubmit} noValidate>
-      {/* Left column on desktop: image upload */}
+      {/* Left column on desktop: image upload — no label per Figma */}
       <div className={styles.imageCol}>
         <ImageInput
           id="recipe-image"
-          label="Recipe image"
           initialImageUrl={typeof formik.values.image === "string" ? formik.values.image.trim() : undefined}
           accept="image/*"
           elementTrigger={<a href="#">Upload another photo</a>}
           targetWidth={551}
           targetHeight={400}
           onFileSelect={(file) => {
-            if (file) formik.setFieldValue("image", file);
+            if (file) void formik.setFieldValue("image", file, false);
           }}
           disabled={isSubmitting || isImageUploading}
           hasError={Boolean(formik.touched.image && formik.errors.image) || Boolean(imageUploadError)}
@@ -211,6 +217,28 @@ export const RecipeEditorForm = ({
           {formik.touched.name && formik.errors.name && <FormErrorMessage>{formik.errors.name}</FormErrorMessage>}
         </div>
 
+        {/* Description */}
+        <div className={styles.group}>
+          <label className={styles.label} htmlFor="recipe-description">
+            Description
+          </label>
+          <TextArea
+            id="recipe-description"
+            name="description"
+            value={formik.values.description}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            placeholder="Enter a description of the dish"
+            hasError={Boolean(formik.touched.description && formik.errors.description)}
+            disabled={isSubmitting}
+            rows={4}
+            maxLength={200}
+          />
+          {formik.touched.description && formik.errors.description && (
+            <FormErrorMessage>{formik.errors.description}</FormErrorMessage>
+          )}
+        </div>
+
         {/* Category + Cooking time — side by side per Figma */}
         <div className={styles.categoryTimeRow}>
           <div className={styles.group}>
@@ -223,9 +251,10 @@ export const RecipeEditorForm = ({
               value={formik.values.categoryId}
               hasError={Boolean(formik.touched.categoryId && formik.errors.categoryId)}
               onChange={(event) => {
-                formik.setFieldValue("categoryId", event.target.value);
-                void formik.setFieldTouched("categoryId", true);
+                // Only set value — touched is set on blur or submit, not on change
+                void formik.setFieldValue("categoryId", event.target.value);
               }}
+              onBlur={() => void formik.setFieldTouched("categoryId", true)}
               disabled={isSubmitting || isCatalogLoading}
             >
               {categories.map((categoryItem) => (
@@ -272,9 +301,10 @@ export const RecipeEditorForm = ({
             onChange={(event) => {
               const nextAreaId = Number(event.target.value);
               const nextAreas = Number.isFinite(nextAreaId) && nextAreaId > 0 ? [nextAreaId] : [];
-              formik.setFieldValue("areas", nextAreas, true);
-              void formik.setFieldTouched("areas", true);
+              // No shouldValidate + no setFieldTouched — errors only on blur or submit
+              void formik.setFieldValue("areas", nextAreas);
             }}
+            onBlur={() => void formik.setFieldTouched("areas", true)}
             disabled={isSubmitting || isCatalogLoading}
           >
             {areas.map((optionItem) => (
@@ -355,7 +385,7 @@ export const RecipeEditorForm = ({
             ))}
           </div>
 
-          {typeof formik.errors.ingredients === "string" && (
+          {formik.touched.ingredients && typeof formik.errors.ingredients === "string" && (
             <FormErrorMessage>{formik.errors.ingredients}</FormErrorMessage>
           )}
         </div>
@@ -382,27 +412,12 @@ export const RecipeEditorForm = ({
           )}
         </div>
 
-        {submitError && <FormErrorMessage variant="form">{submitError}</FormErrorMessage>}
+        {/* Submit error shown as toast — no inline block needed */}
 
         {/* Actions */}
         <div className={styles.actions}>
           <Button variant="secondary" isIconOnly onClick={onCancel} disabled={isSubmitting} aria-label="Delete draft">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M2.5 5H4.16667H17.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M6.66669 5V3.33333C6.66669 2.89131 6.84228 2.46738 7.15484 2.15482C7.4674 1.84226 7.89133 1.66667 8.33335 1.66667H11.6667C12.1087 1.66667 12.5326 1.84226 12.8452 2.15482C13.1578 2.46738 13.3334 2.89131 13.3334 3.33333V5M15.8334 5V16.6667C15.8334 17.1087 15.6578 17.5326 15.3452 17.8452C15.0326 18.1577 14.6087 18.3333 14.1667 18.3333H5.83335C5.39133 18.3333 4.9674 18.1577 4.65484 17.8452C4.34228 17.5326 4.16669 17.1087 4.16669 16.6667V5H15.8334Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Icon name="trash" color="text-primary" size={18} />
           </Button>
           <Button type="submit" isLoading={isSubmitting}>
             {isEdit ? "Update recipe" : "Publish"}
