@@ -120,6 +120,12 @@
   }
 }
 
+.titleLink,
+.descriptionLink {
+  text-decoration: none;
+ 
+}
+
 .list {
   flex-direction: row;
   align-items: flex-start;
@@ -219,6 +225,8 @@
   border: none;
   padding: 0;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 .avatar {
@@ -243,6 +251,7 @@
   font-weight: var(--fd-font-weight-bold);
   font-size: var(--fd-type-main-mobile-size);
   color: var(--fd-text-secondary);
+  
 }
 
 .actions {
