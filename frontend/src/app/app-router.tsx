@@ -24,7 +24,7 @@ export const appRouter = createBrowserRouter([
           {
             path: APP_ROUTES.CATEGORY,
             element: <CategoryPage />,
-            handle: routeHandle({ breadcrumb: { title: "Category" } }),
+            handle: routeHandle({ overrides: { layoutHeaderShown: false } }),
           },
           {
             path: APP_ROUTES.RECIPE_DETAILS,
