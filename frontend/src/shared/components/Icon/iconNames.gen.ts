@@ -8,6 +8,7 @@
 export type IconName =
   | "arrow-up-right"
   | "burger-menu"
+  | "camera"
   | "chevron-down"
   | "close"
   | "eye-off"
@@ -16,6 +17,8 @@ export type IconName =
   | "heart"
   | "instagram"
   | "logo"
+  | "minus"
+  | "plus"
   | "quote"
   | "trash"
   | "youtube";
