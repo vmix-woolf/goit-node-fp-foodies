@@ -91,11 +91,7 @@ export const RecipePage = (): ReactElement => {
 
               {/* Actions */}
               <div className={styles.actions}>
-                <Button
-                  variant="secondary"
-                  disabled={isPending(recipe.id)}
-                  onClick={handleActionClick}
-                >
+                <Button variant="secondary" disabled={isPending(recipe.id)} onClick={handleActionClick}>
                   {isFavorite(recipe.id) ? "Remove from Favorites" : "Add to Favorites"}
                 </Button>
 
