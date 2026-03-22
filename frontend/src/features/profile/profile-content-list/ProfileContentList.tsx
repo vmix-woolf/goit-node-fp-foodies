@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TabsListTab } from "../../../shared/components/TabsList/useTabsList";
 import UserRecipesList from "../../../shared/components/UserRecipesList";
@@ -46,12 +46,7 @@ export const ProfileContentList = ({ userId, isOwnProfile }: ProfileContentListP
 
   const totalPages = Math.ceil((activeData.total ?? 0) / PAGE_SIZE);
 
-  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
     switch (tab) {
       case TabsListTab.RECIPES:
         recipes.loadOwnRecipes();
